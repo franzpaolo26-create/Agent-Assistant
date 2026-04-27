@@ -1,51 +1,90 @@
 // 1. Importar herramientas
 require('dotenv').config();
+const { listFiles } = require('./drive_tools');
+const { authorize } = require('./auth');
 const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
 
-// 2. Configurar el "Cuerpo" de WhatsApp
+// 2. Configurar IA
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const model = genAI.getGenerativeModel({ model: "gemini-pro-latest" });
+
+let chatHistory = [
+    {
+        role: "user",
+        parts: [{ text: "Eres Jarvis, el asistente personal de Franz. Eres culto y eficiente. Responde de forma concisa." }],
+    },
+    {
+        role: "model",
+        parts: [{ text: "Entendido, señor. Estoy operativo en su canal privado." }],
+    }
+];
+
+// 3. Configurar WhatsApp
 const client = new Client({
     authStrategy: new LocalAuth(),
     puppeteer: {
-        headless: true, // Cámbialo a false si quieres ver la ventana del navegador abrirse y fallar
-        args: [
-            '--no-sandbox',
-            '--disable-setuid-sandbox',
-            '--disable-extensions',
-            '--disable-dev-shm-usage',
-            '--disable-accelerated-2d-canvas',
-            '--no-first-run',
-            '--no-zygote',
-            '--single-process',
-            '--disable-gpu'
-        ],
-        // Esto hace que WhatsApp crea que eres un Chrome normal en Windows
-        userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        headless: true,
+        args: ['--no-sandbox', '--disable-setuid-sandbox']
     }
 });
 
-// 3. Mostrar el código QR en la pantalla
 client.on('qr', (qr) => {
-    console.log('--- ESCANEA ESTO CON TU IPHONE ---');
+    console.log('--- ESCANEA EL QR ---');
     qrcode.generate(qr, { small: true });
 });
 
-// 4. Confirmar que estamos dentro
 client.on('ready', () => {
-    console.log('¡Sistemas en línea! Jarvis está listo para servirle, señor.');
+    console.log('¡Sistemas en línea! Jarvis está blindado, señor.');
 });
 
-// 5. Escuchar y responder mensajes
-client.on('message', async (msg) => {
-    // Solo responderte a ti por seguridad
-    if (msg.from !== process.env.OWNER_NUMBER) return;
+// 6. El cerebro en acción con FILTRO DE AUTO-CHAT
+client.on('message_create', async (msg) => {
+    
+    // FILTRO MAESTRO:
+    // 1. Solo mensajes enviados por MÍ (fromMe)
+    // 2. Solo si el destinatario es el mismo que el remitente (Chat contigo mismo)
+    // 3. Que NO sea un grupo
+    const esChatPropio = msg.to === msg.from;
 
-    console.log('Mensaje recibido:', msg.body);
+    if (!msg.fromMe || !esChatPropio || msg.isGroup) return;
 
-    if (msg.body.toLowerCase() === 'hola') {
-        msg.reply('Hola señor, estoy configurado correctamente. ¿En qué puedo ayudarle?');
+    const query = msg.body.toLowerCase();
+    console.log(`[Jarvis]: Mensaje detectado en chat personal: ${msg.body}`);
+
+    try {
+        if (query.includes('lista mis archivos') || query.includes('drive')) {
+            const lista = await listFiles();
+            await msg.reply(lista);
+            return;
+        }
+
+        const chat = model.startChat({ history: chatHistory });
+        const result = await chat.sendMessage(msg.body);
+        const response = await result.response;
+        const text = response.text();
+
+        chatHistory.push({ role: "user", parts: [{ text: msg.body }] });
+        chatHistory.push({ role: "model", parts: [{ text: text }] });
+
+        await msg.reply(text);
+
+    } catch (error) {
+        console.error('Error:', error);
     }
 });
 
-// 6. Arrancar el proceso
-client.initialize();
+// 7. Inicio
+async function iniciarAsistente() {
+    try {
+        console.log('Conectando con Google...');
+        await authorize(); 
+        console.log('✅ Google conectado.');
+        client.initialize();
+    } catch (error) {
+        console.error('Error al iniciar:', error);
+    }
+}
+
+iniciarAsistente();
