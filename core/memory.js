@@ -42,6 +42,7 @@ db.exec(`
     tool        TEXT NOT NULL,
     input       TEXT,
     result      TEXT,
+    output      TEXT,
     model       TEXT,
     duration_ms INTEGER
   );
@@ -64,7 +65,7 @@ const stmts = {
   getPref:      db.prepare('SELECT value FROM preferences WHERE key = ?'),
   insertTool:   db.prepare('INSERT INTO tool_logs (tool, input, result, model, duration_ms) VALUES (?, ?, ?, ?, ?)'),
   insertCost:   db.prepare('INSERT INTO cost_log (model, tokens_in, tokens_out, usd_approx) VALUES (?, ?, ?, ?)'),
-  totalCost:    db.prepare('SELECT COALESCE(SUM(usd_approx), 0) AS total FROM cost_log WHERE ts >= date("now", "start of month")'),
+  totalCost:    db.prepare('SELECT COALESCE(SUM(usd_approx), 0) AS total FROM cost_log WHERE ts >= date(\'now\', \'start of month\')'),
   statsToday:   db.prepare(`
     SELECT
       model,
