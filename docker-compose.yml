@@ -24,10 +24,8 @@ services:
       - whatsapp_auth:/app/.wwebjs_auth   # WhatsApp session persistence
       - whatsapp_cache:/app/.wwebjs_cache
     depends_on:
-      ollama:
-        condition: service_healthy
-      chromadb:
-        condition: service_healthy
+      - ollama
+      - chromadb
     networks:
       - jarvis-net
     deploy:
