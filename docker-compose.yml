@@ -31,7 +31,7 @@ services:
     deploy:
       resources:
         limits:
-          memory: 2G
+          memory: 4G
           cpus: '2'
 
   # ── Ollama (Cerebro Local) ──────────────────────────────────
@@ -48,7 +48,7 @@ services:
     deploy:
       resources:
         limits:
-          memory: 6G
+          memory: 5G
           cpus: '3'
 
 networks:
