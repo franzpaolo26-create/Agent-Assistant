@@ -1,30 +1,57 @@
-# ─── Dependencias ───────────────────────────────
-node_modules/
+# ═══════════════════════════════════════════════
+#   JARVIS OS — .gitignore
+#   NEVER commit credentials or session data
+# ═══════════════════════════════════════════════
 
-# ─── Variables de entorno (NUNCA subir) ─────────
+# ── Secrets & Credentials (CRITICAL) ─────────────────
 .env
-.env.local
-.env.production
-
-# ─── WhatsApp — sesión local (se regenera con QR) ──
-.wwebjs_auth/
-.wwebjs_cache/
-
-# ─── Google OAuth — credenciales y tokens ───────
 credentials.json
 token.json
+*.pem
+*.key
+*.p12
+*.pfx
+service-account*.json
 
-# ─── Logs ────────────────────────────────────────
-*.log
+# ── WhatsApp Session Data ─────────────────────────────
+.wwebjs_auth/
+.wwebjs_cache/
+whatsapp_auth/
+whatsapp_session/
+
+# ── Node.js ───────────────────────────────────────────
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# ── Runtime Data ──────────────────────────────────────
+data/*.db
+data/*.db-wal
+data/*.db-shm
 logs/
+tmp/
 
-# ─── PM2 ─────────────────────────────────────────
-.pm2/
-
-# ─── Sistema operativo ───────────────────────────
+# ── OS / Editor ───────────────────────────────────────
 .DS_Store
 Thumbs.db
-
-# ─── IDEs ────────────────────────────────────────
+Desktop.ini
 .vscode/
 .idea/
+*.swp
+*.swo
+
+# ── Build ─────────────────────────────────────────────
+dist/
+build/
+*.tgz
+
+# ── Temp / Audio ──────────────────────────────────────
+/tmp/
+*.ogg
+*.wav
+*.mp3
+
+# NOTE: .env.example IS committed (it's the template)
+# NOTE: credentials.json is uploaded to VPS via SFTP only

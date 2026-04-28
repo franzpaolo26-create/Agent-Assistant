@@ -1,0 +1,30 @@
+# ── Node & npm ───────────────────────────────────────────────
+node_modules/
+npm-debug.log*
+
+# ── Environment (NEVER commit real credentials) ───────────────
+.env
+token.json
+credentials.json
+
+# ── WhatsApp session data ─────────────────────────────────────
+.wwebjs_auth/
+.wwebjs_cache/
+
+# ── Runtime data (managed by Docker volumes) ──────────────────
+data/
+logs/
+
+# ── OS / editor ───────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# ── Build artifacts ───────────────────────────────────────────
+dist/
+build/
+*.tgz
+
+# ── Git ───────────────────────────────────────────────────────
+.git/
