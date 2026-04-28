@@ -61,7 +61,7 @@ db.exec(`
 const stmts = {
   insertMsg:    db.prepare('INSERT INTO conversations (role, content, model, tier, tokens) VALUES (?, ?, ?, ?, ?)'),
   recentMsgs:   db.prepare('SELECT role, content FROM conversations ORDER BY id DESC LIMIT ?'),
-  insertPref:   db.prepare('INSERT OR REPLACE INTO preferences (key, value, updated_at) VALUES (?, ?, datetime("now"))'),
+  insertPref:   db.prepare('INSERT OR REPLACE INTO preferences (key, value, updated_at) VALUES (?, ?, datetime(\'now\'))'),
   getPref:      db.prepare('SELECT value FROM preferences WHERE key = ?'),
   insertTool:   db.prepare('INSERT INTO tool_logs (tool, input, result, model, duration_ms) VALUES (?, ?, ?, ?, ?)'),
   insertCost:   db.prepare('INSERT INTO cost_log (model, tokens_in, tokens_out, usd_approx) VALUES (?, ?, ?, ?)'),
