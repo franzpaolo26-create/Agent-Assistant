@@ -163,11 +163,9 @@ ${result.slice(0, 3500)}
       if (snippets.length === 0) {
         await msg.reply(`_No encontré recuerdos relevantes sobre "${args}", Señor._`);
       } else {
-        await msg.reply(`🧠 *Memoria relevante:*
+          await msg.reply(`🧠 *Memoria relevante:*
 
-${snippets.map((s, i) => `${i + 1}. ${s}`).join('
-
-')}`);
+${snippets.map((s, i) => `${i + 1}. ${s}`).join('\n\n')}`);
       }
       break;
     }
