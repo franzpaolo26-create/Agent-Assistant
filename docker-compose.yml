@@ -1,61 +1,105 @@
 # ═══════════════════════════════════════════════════════════════
-#   OpenClaw OS — Docker Compose Stack
-#   Servicios: openclaw-gateway | ollama
+#   JARVIS OS — Docker Compose Stack
+#   Servicios: jarvis-core | ollama | chromadb
+#   VPS Contabo: 6 vCores / 12GB RAM / Ubuntu 24.04
 # ═══════════════════════════════════════════════════════════════
 
 services:
 
-  # ── OpenClaw (Motor Principal) ──────────────────────────────
-  openclaw:
-    image: node:22-bullseye-slim
-    container_name: openclaw-gateway
+  # ── JARVIS Core ─────────────────────────────────────────────
+  jarvis-core:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: jarvis-core
     restart: unless-stopped
-    # Instala OpenClaw cada vez que arranca para asegurar tener la última versión
-    # y luego levanta el Gateway escuchando en todas las interfaces.
-    command: >
-      sh -c "npm install -g openclaw@latest && openclaw gateway --port 18789 --host 0.0.0.0"
     env_file: .env
     environment:
       - OLLAMA_BASE_URL=http://ollama:11434
+      - CHROMA_URL=http://chromadb:8000
       - NODE_ENV=production
     volumes:
-      # Persistencia vital: Aquí se guarda la base de datos de OpenClaw, 
-      # configuración, Skills y sesiones de WhatsApp/Telegram
-      - ./openclaw_data:/root/.openclaw
-    ports:
-      - "18789:18789"
-    networks:
-      - jarvis-net
+      - ./data:/app/data          # SQLite + devices.json
+      - ./logs:/app/logs          # Application logs
+      - whatsapp_auth:/app/.wwebjs_auth   # WhatsApp session persistence
+      - whatsapp_cache:/app/.wwebjs_cache
     depends_on:
       - ollama
+      - chromadb
+    networks:
+      - jarvis-net
     deploy:
       resources:
         limits:
           memory: 4G
-          cpus: '2'
+          cpus: '3'
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/health', r => process.exit(r.statusCode === 200 ? 0 : 1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
-  # ── Ollama (Cerebro Local) ──────────────────────────────────
+  # ── Ollama — Local LLM Server ────────────────────────────────
   ollama:
     image: ollama/ollama:latest
     container_name: jarvis-ollama
     restart: unless-stopped
     volumes:
-      - ollama_models:/root/.ollama
+      - ollama_models:/root/.ollama   # Persist downloaded models
     ports:
-      - "11434:11434"
+      - "11434:11434"                 # Expose for debugging (remove in prod)
     networks:
       - jarvis-net
     deploy:
       resources:
         limits:
-          memory: 5G
-          cpus: '3'
+          memory: 6G
+          cpus: '2'
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
 
+  # ── ChromaDB — Vector Memory (RAG) ──────────────────────────
+  chromadb:
+    image: chromadb/chroma:latest
+    container_name: jarvis-chromadb
+    restart: unless-stopped
+    environment:
+      - IS_PERSISTENT=TRUE
+      - PERSIST_DIRECTORY=/chroma/chroma
+      - ANONYMIZED_TELEMETRY=FALSE
+    volumes:
+      - chroma_data:/chroma/chroma
+    networks:
+      - jarvis-net
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1'
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/heartbeat"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+# ── Networks ─────────────────────────────────────────────────
 networks:
   jarvis-net:
     driver: bridge
-    name: openclaw-network
+    name: jarvis-network
 
+# ── Volumes ──────────────────────────────────────────────────
 volumes:
   ollama_models:
-    name: openclaw-ollama-models
+    name: jarvis-ollama-models
+  chroma_data:
+    name: jarvis-chroma-data
+  whatsapp_auth:
+    name: jarvis-wa-auth
+  whatsapp_cache:
+    name: jarvis-wa-cache
